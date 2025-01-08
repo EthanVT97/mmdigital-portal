@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Facebook, MessageCircle, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="relative bg-gradient-to-b from-primary to-secondary py-20 text-white">
       <div className="container mx-auto px-4">
@@ -12,7 +15,12 @@ export const HeroSection = () => {
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
             Manage all your social media advertising campaigns in one place
           </p>
-          <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100">
+          <Button 
+            size="lg" 
+            variant="secondary" 
+            className="bg-white text-primary hover:bg-gray-100"
+            onClick={() => navigate('/dashboard')}
+          >
             Get Started
           </Button>
         </div>
