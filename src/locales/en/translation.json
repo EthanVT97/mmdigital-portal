@@ -1,0 +1,211 @@
+{
+  "header": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "faq": "FAQ",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "Transform Your Digital Marketing",
+    "subtitle": "Launch powerful social media campaigns across multiple platforms from a single dashboard. Reach your audience where they are.",
+    "cta": {
+      "start": "Get Started",
+      "dashboard": "Go to Dashboard"
+    }
+  },
+  "platforms": {
+    "title": "Supported Platforms",
+    "facebook": {
+      "title": "Facebook Marketing",
+      "description": "Reach billions of users with targeted Facebook ads",
+      "features": ["Precision Targeting", "Automation Tools", "A/B Testing", "ROI Tracking"]
+    },
+    "youtube": {
+      "title": "YouTube Marketing",
+      "description": "Create engaging video campaigns on YouTube",
+      "features": ["Channel Management", "Automated Posting", "Analytics", "Engagement Tracking"]
+    },
+    "tiktok": {
+      "title": "TikTok Marketing",
+      "description": "Go viral with TikTok's creative ad platform",
+      "features": ["Keyword Research", "Ad Optimization", "Performance Tracking", "ROI Analysis"]
+    },
+    "telegram": {
+      "title": "Telegram Marketing",
+      "description": "Connect with your audience through Telegram channels",
+      "features": ["Channel Management", "Automated Posting", "Analytics", "Engagement Tracking"]
+    },
+    "google": {
+      "title": "Google Ads",
+      "description": "Maximize visibility with targeted Google advertising",
+      "features": ["Keyword Research", "Ad Optimization", "Performance Tracking", "ROI Analysis"]
+    }
+  },
+  "features": {
+    "title": "Why Choose MMDIGITAL",
+    "targeting": "Precision Targeting",
+    "automation": "Automation Tools",
+    "analytics": "Advanced Analytics",
+    "support": "24/7 Support",
+    "testing": "A/B Testing",
+    "channel": "Channel Management",
+    "posting": "Automated Posting",
+    "engagement": "Engagement Analytics",
+    "keyword": "Keyword Research",
+    "optimization": "Ad Optimization",
+    "performance": "Performance Tracking",
+    "realtime": "Real-time Monitoring",
+    "reports": "Custom Reports",
+    "insights": "Deep Insights",
+    "metrics": "Key Metrics",
+    "roi": "ROI Tracking"
+  },
+  "feature_descriptions": {
+    "targeting": {
+      "title": "Precision Targeting",
+      "description": "Reach your ideal customers with advanced targeting options"
+    },
+    "analytics": {
+      "title": "Advanced Analytics",
+      "description": "Track and analyze your campaign performance in real-time"
+    },
+    "automation": {
+      "title": "Automation Tools",
+      "description": "Automate your campaigns for maximum efficiency"
+    },
+    "support": {
+      "title": "24/7 Support",
+      "description": "Get help whenever you need it from our expert team"
+    },
+    "roi": {
+      "title": "ROI Tracking",
+      "description": "Measure and optimize your return on investment"
+    }
+  },
+  "about": {
+    "title": "About MMDIGITAL",
+    "description": "We are a leading digital marketing agency helping businesses grow their online presence.",
+    "team": {
+      "title": "Meet Our Team",
+      "description": "Our team of experts is dedicated to your success"
+    },
+    "achievements": {
+      "title": "Our Achievements",
+      "description": "Numbers that speak for themselves"
+    }
+  },
+  "team": {
+    "ceo": {
+      "name": "John Smith",
+      "role": "CEO & Founder",
+      "bio": "With over 15 years of experience in digital marketing"
+    },
+    "marketing": {
+      "name": "Sarah Johnson",
+      "role": "Marketing Director",
+      "bio": "Expert in social media strategy and brand development"
+    },
+    "tech": {
+      "name": "David Chen",
+      "role": "Technical Director",
+      "bio": "Leading our technical innovations and developments"
+    },
+    "creative": {
+      "name": "Emily Brown",
+      "role": "Creative Director",
+      "bio": "Award-winning creative professional"
+    }
+  },
+  "achievements": {
+    "projects": {
+      "number": "500+",
+      "label": "Projects Completed"
+    },
+    "staff": {
+      "number": "50+",
+      "label": "Team Members"
+    },
+    "experience": {
+      "number": "10+",
+      "label": "Years Experience"
+    },
+    "awards": {
+      "number": "25+",
+      "label": "Awards Won"
+    }
+  },
+  "cta": {
+    "title": "Ready to Grow Your Business with MMDIGITAL?",
+    "subtitle": "Join thousands of businesses that trust MMDIGITAL with their digital marketing campaigns",
+    "button": {
+      "trial": "Start Free Trial",
+      "launch": "Launch Your Campaign"
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about our digital marketing services",
+    "items": [
+      {
+        "question": "How much does it cost to start digital marketing services?",
+        "answer": "We have packages starting from 99,000 MMK per month. You can choose based on your business needs."
+      },
+      {
+        "question": "What platforms can I advertise on?",
+        "answer": "In addition to Facebook, Telegram, and Google Ads, you can also advertise on Instagram, YouTube, and TikTok."
+      },
+      {
+        "question": "How long does it take to create an ad campaign?",
+        "answer": "Typically, we can start within 2-3 days. However, the duration may vary depending on the campaign size and complexity."
+      },
+      {
+        "question": "How do you manage advertising budgets?",
+        "answer": "We use AI algorithms to optimize your budget for maximum effectiveness. We also perform daily optimizations if needed."
+      },
+      {
+        "question": "How can I measure the results of the service?",
+        "answer": "We provide detailed monthly reports measuring metrics such as reach, engagement, conversion, and ROI of your advertisements."
+      }
+    ]
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "register": "Register",
+      "success": "Welcome back!",
+      "error": "Login failed",
+      "errorMessage": "Please check your credentials and try again."
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Sign up for a new account",
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign Up",
+      "haveAccount": "Already have an account?",
+      "login": "Login",
+      "success": "Registration successful!",
+      "error": "Registration failed",
+      "errorMessage": "Please check your information and try again."
+    }
+  },
+  "footer": {
+    "company": "Company",
+    "platform": "Platform",
+    "legal": "Legal",
+    "description": "မြန်မာနိုင်ငံ၏ ထိပ်တန်း Digital Marketing ဝန်ဆောင်မှု ပေးသော ကုမ္ပဏီ",
+    "copyright": " {year} 18K Group. All rights reserved."
+  }
+}
