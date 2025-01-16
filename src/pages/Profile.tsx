@@ -1,124 +1,98 @@
 import { useEffect, useState, useCallback } from "react";
-import { useSupabaseClient, useSession } from "@supabase/auth-helpers-react";
 import { useNavigate } from "react-router-dom";
+import { createBrowserClient } from '@supabase/ssr';
+import { useSession } from '@/App';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Camera } from "lucide-react";
+import { toast } from 'sonner';
 
 const AVATAR_BUCKET_NAME = 'avatars';
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-export function Profile() {
+interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+  phone?: string;
+  company?: string;
+}
+
+export default function Profile() {
   const navigate = useNavigate();
-  const supabase = useSupabaseClient();
-  const session = useSession();
-  const { toast } = useToast();
-  
-  const [loading, setLoading] = useState(false);
+  const { session } = useSession();
+  const { toast: notify } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [userData, setUserData] = useState({
-    full_name: "",
-    email: "",
-    avatar_url: "",
-    phone: "",
-    company: "",
-  });
 
-  // Redirect if not authenticated
+  const supabase = createBrowserClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
+
   useEffect(() => {
-    if (!session) {
-      navigate('/login');
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please log in to view your profile",
-      });
-    }
-  }, [session, navigate, toast]);
+    if (!session?.user?.id) return;
 
-  const getUserProfile = useCallback(async () => {
-    if (!session?.user) return;
-    
-    try {
-      setLoading(true);
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) throw userError;
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-      if (user) {
-        // Get the avatar URL if it exists
-        let avatarUrl = user.user_metadata?.avatar_url || "";
-        
-        // If we have an avatar path but not a full URL, get the public URL
-        if (avatarUrl && !avatarUrl.startsWith('http')) {
-          const { data: { publicUrl } } = supabase.storage
-            .from(AVATAR_BUCKET_NAME)
-            .getPublicUrl(avatarUrl);
-          avatarUrl = publicUrl;
-        }
-
-        setUserData({
-          full_name: user.user_metadata?.full_name || "",
-          email: user.email || "",
-          avatar_url: avatarUrl,
-          phone: user.user_metadata?.phone || "",
-          company: user.user_metadata?.company || "",
+        if (error) throw error;
+        setProfile(data);
+      } catch (error: any) {
+        notify({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
         });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not load user profile. Please try refreshing the page.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user, supabase, toast]);
+    };
 
-  useEffect(() => {
-    getUserProfile();
-  }, [getUserProfile]);
+    fetchProfile();
+  }, [session, notify]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user) return;
+    if (!profile || !session?.user?.id) return;
 
+    setUpdating(true);
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: userData.full_name,
-          avatar_url: userData.avatar_url,
-          phone: userData.phone,
-          company: userData.company,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          company: profile.company,
+        })
+        .eq('id', session.user.id);
 
       if (error) throw error;
-
-      toast({
+      notify({
         title: "Success",
         description: "Profile updated successfully",
       });
-      
-      // Refresh user data after update
-      getUserProfile();
     } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast({
+      notify({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Could not update profile. Please try again.",
+        description: error.message,
       });
     } finally {
-      setLoading(false);
+      setUpdating(false);
     }
   };
 
@@ -136,7 +110,7 @@ export function Profile() {
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!session?.user) return;
+    if (!session?.user?.id) return;
 
     try {
       setUploading(true);
@@ -152,9 +126,9 @@ export function Profile() {
       const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
 
       // Delete old avatar if exists
-      if (userData.avatar_url) {
+      if (profile?.avatar_url) {
         try {
-          const oldFileName = userData.avatar_url.split('/').pop();
+          const oldFileName = profile.avatar_url.split('/').pop();
           if (oldFileName) {
             await supabase.storage
               .from(AVATAR_BUCKET_NAME)
@@ -191,26 +165,29 @@ export function Profile() {
 
       if (updateError) throw updateError;
 
-      setUserData({ ...userData, avatar_url: publicUrl });
+      setProfile({ ...profile, avatar_url: publicUrl });
 
-      toast({
+      notify({
         title: "Success",
         description: "Avatar updated successfully",
       });
     } catch (error: any) {
-      console.error("Error uploading avatar:", error);
-      toast({
+      notify({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Could not upload avatar. Please try again.",
+        description: error.message,
       });
     } finally {
       setUploading(false);
     }
   };
 
-  if (!session) {
-    return null; // Don't render anything if not authenticated
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!profile) {
+    return <div>No profile found</div>;
   }
 
   return (
@@ -224,99 +201,92 @@ export function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpdateProfile}>
-              <div className="space-y-6">
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative">
-                    <Avatar className="h-24 w-24 ring-2 ring-gray-700">
-                      <AvatarImage src={userData.avatar_url} alt={userData.full_name} />
-                      <AvatarFallback className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xl">
-                        {userData.full_name.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Label
-                      htmlFor="avatar"
-                      className="absolute bottom-0 right-0 p-1 rounded-full bg-gray-700 hover:bg-gray-600 cursor-pointer"
-                    >
-                      {uploading ? (
-                        <Loader2 className="h-4 w-4 text-gray-200 animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4 text-gray-200" />
-                      )}
-                    </Label>
-                    <Input
-                      id="avatar"
-                      type="file"
-                      accept="image/png,image/jpeg,image/gif"
-                      className="hidden"
-                      onChange={handleAvatarUpload}
-                      disabled={uploading}
-                    />
-                  </div>
-                  <p className="text-sm text-gray-400">
-                    Allowed: JPEG, PNG, GIF (max 2MB)
-                  </p>
-                </div>
-
-                {/* Full Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="full_name" className="text-gray-200">
-                    Full Name
+            <form onSubmit={handleUpdateProfile} className="space-y-6">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative">
+                  <Avatar className="h-24 w-24 ring-2 ring-gray-700">
+                    <AvatarImage src={profile.avatar_url} alt={profile.name} />
+                    <AvatarFallback className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xl">
+                      {profile.name.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Label
+                    htmlFor="avatar"
+                    className="absolute bottom-0 right-0 p-1 rounded-full bg-gray-700 hover:bg-gray-600 cursor-pointer"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 text-gray-200 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-gray-200" />
+                    )}
                   </Label>
                   <Input
-                    id="full_name"
-                    type="text"
-                    value={userData.full_name}
-                    onChange={(e) => setUserData({ ...userData, full_name: e.target.value })}
-                    className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
-                    placeholder="Enter your full name"
+                    id="avatar"
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={uploading}
                   />
                 </div>
+                <p className="text-sm text-gray-400">
+                  Allowed: JPEG, PNG, GIF (max 2MB)
+                </p>
+              </div>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-200">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={userData.email}
-                    disabled
-                    className="bg-gray-700 border-gray-600 text-gray-400"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-200">
+                  Full Name
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
+                  placeholder="Enter your full name"
+                />
+              </div>
 
-                {/* Phone */}
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-gray-200">
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={userData.phone}
-                    onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
-                    className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-200">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
+                />
+              </div>
 
-                {/* Company */}
-                <div className="space-y-2">
-                  <Label htmlFor="company" className="text-gray-200">
-                    Company
-                  </Label>
-                  <Input
-                    id="company"
-                    type="text"
-                    value={userData.company}
-                    onChange={(e) => setUserData({ ...userData, company: e.target.value })}
-                    className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
-                    placeholder="Enter your company name"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-200">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
+                  placeholder="Enter your phone number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company" className="text-gray-200">
+                  Company
+                </Label>
+                <Input
+                  id="company"
+                  type="text"
+                  value={profile.company}
+                  onChange={(e) => setProfile({ ...profile, company: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-gray-100 focus:ring-cyan-500"
+                  placeholder="Enter your company name"
+                />
               </div>
             </form>
           </CardContent>
@@ -330,10 +300,10 @@ export function Profile() {
             </Button>
             <Button
               onClick={handleUpdateProfile}
-              disabled={loading}
+              disabled={updating}
               className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
             >
-              {loading ? (
+              {updating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
@@ -348,5 +318,3 @@ export function Profile() {
     </div>
   );
 }
-
-export default Profile;

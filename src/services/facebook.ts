@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { BusinessSuitePost, Post, PageInsights, PostInsights, AudienceInsights } from '@/types/facebook';
+import { errorHandler, ApiError } from './errorHandling';
+import { authService } from './authService';
 
 interface FacebookPage {
   id: string;
@@ -22,31 +24,32 @@ class FacebookService {
   }
 
   async getPages(): Promise<FacebookPage[]> {
-    try {
-      await this.initialize();
-      if (!this.accessToken) throw new Error('Not authenticated');
-      
-      const response = await fetch(`${this.baseUrl}/me/accounts?access_token=${this.accessToken}`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch pages');
+    return await authService.executeWithRetry(async () => {
+      try {
+        if (!this.accessToken) throw new Error('Not authenticated');
+        
+        const response = await fetch(`${this.baseUrl}/me/accounts?access_token=${this.accessToken}`);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new ApiError(error.message || 'Failed to fetch pages', response.status);
+        }
+        
+        const data = await response.json();
+        if (!data.data) {
+          throw new Error('No pages found');
+        }
+        
+        return data.data.map((page: any) => ({
+          id: page.id,
+          name: page.name,
+          access_token: page.access_token,
+          category: page.category || 'Page',
+        }));
+      } catch (error) {
+        errorHandler.handle(error, 'getPages');
+        throw error;
       }
-      
-      const data = await response.json();
-      if (!data.data) {
-        throw new Error('No pages found');
-      }
-      
-      return data.data.map((page: any) => ({
-        id: page.id,
-        name: page.name,
-        access_token: page.access_token,
-        category: page.category || 'Page',
-      }));
-    } catch (error) {
-      console.error('Error fetching pages:', error);
-      throw error;
-    }
+    });
   }
 
   async createPost(pageId: string, post: Omit<BusinessSuitePost, 'id' | 'created_time' | 'status'>): Promise<BusinessSuitePost> {

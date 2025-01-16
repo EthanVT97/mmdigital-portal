@@ -1,44 +1,49 @@
-import { SocialAuth } from "@/components/auth/SocialAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createBrowserClient } from '@supabase/ssr';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { SocialAuth } from '@/components/auth/SocialAuth';
 import { useTranslation } from "react-i18next";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const supabase = useSupabaseClient();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+
+  const supabase = createBrowserClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      if (error) throw error;
-
-      if (data?.user) {
-        toast({
-          title: t('auth.login.success'),
-          description: t('auth.login.success'),
-        });
-        navigate('/dashboard');
+      if (error) {
+        throw error;
       }
+
+      toast({
+        title: t('auth.login.success'),
+        description: t('auth.login.success'),
+      });
+      navigate('/dashboard');
     } catch (error: any) {
       console.error("Error logging in:", error);
       toast({
@@ -202,16 +207,13 @@ export default function Login() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
-                    placeholder="name@example.com"
                     type="email"
                     autoCapitalize="none"
                     autoComplete="email"
                     autoCorrect="off"
                     disabled={loading}
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -223,10 +225,8 @@ export default function Login() {
                       autoCapitalize="none"
                       autoComplete="current-password"
                       disabled={loading}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <button
                       type="button"
@@ -271,10 +271,13 @@ export default function Login() {
 
             <p className="px-8 text-center text-sm text-muted-foreground">
               By clicking continue, you agree to our{" "}
+
               <Button variant="link" className="underline underline-offset-4 hover:text-primary p-0">
                 Terms of Service
               </Button>{" "}
+
               and{" "}
+
               <Button variant="link" className="underline underline-offset-4 hover:text-primary p-0">
                 Privacy Policy
               </Button>

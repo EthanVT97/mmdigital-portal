@@ -1,66 +1,66 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createBrowserClient } from '@supabase/ssr';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-const Register = () => {
+export default function Register() {
   const navigate = useNavigate();
-  const supabase = useSupabaseClient();
   const { toast } = useToast();
   const { t } = useTranslation();
-  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    name: "",
-  });
+
+  const supabase = createBrowserClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setLoading(true);
+
     try {
-      setLoading(true);
-      
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
           data: {
-            name: formData.name,
+            full_name: name,
           },
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (error) throw error;
 
-      if (signUpData?.user) {
+      if (data?.user) {
         // Create a profile record
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
             {
-              id: signUpData.user.id,
-              name: formData.name,
-              email: formData.email,
-            }
+              id: data.user.id,
+              name,
+              email,
+            },
           ]);
 
         if (profileError) throw profileError;
-
-        toast({
-          title: t('auth.register.success'),
-          description: t('auth.register.success'),
-        });
-        navigate('/login');
       }
+
+      toast({
+        title: t('auth.register.success'),
+        description: t('auth.register.success'),
+      });
+      navigate('/login');
     } catch (error: any) {
       console.error("Error registering:", error);
       toast({
@@ -98,8 +98,8 @@ const Register = () => {
                   type="text"
                   placeholder="John Doe"
                   className="pl-10 bg-gray-700 border-gray-600 text-white"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
@@ -116,8 +116,8 @@ const Register = () => {
                   type="email"
                   placeholder="you@example.com"
                   className="pl-10 bg-gray-700 border-gray-600 text-white"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -133,8 +133,8 @@ const Register = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
                 />
@@ -178,6 +178,4 @@ const Register = () => {
       </Card>
     </div>
   );
-};
-
-export default Register;
+}

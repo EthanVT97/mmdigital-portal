@@ -1,26 +1,20 @@
-import { useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSession } from '@supabase/auth-helpers-react';
+import { Navigate } from 'react-router-dom';
+import { useSession } from '@/App';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const session = useSession();
-  const navigate = useNavigate();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { session, loading } = useSession();
 
-  useEffect(() => {
-    if (!session) {
-      navigate('/login', { replace: true });
-    }
-  }, [session, navigate]);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!session) {
-    return null;
+    return <Navigate to="/login" />;
   }
 
   return <>{children}</>;
-};
-
-export default ProtectedRoute;
+}

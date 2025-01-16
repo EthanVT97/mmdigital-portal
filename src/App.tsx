@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createClient } from '@supabase/supabase-js';
-import { SessionContextProvider } from '@supabase/auth-helpers-react';
+import { createBrowserClient } from '@supabase/ssr';
+import { createContext, useContext } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { I18nextProvider } from 'react-i18next';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -40,19 +41,55 @@ const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
 
 const queryClient = new QueryClient();
 
-const supabaseClient = createClient(
+const supabase = createBrowserClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
 emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
 
+export const SessionContext = createContext<{
+  session: Session | null;
+  loading: boolean;
+}>({
+  session: null,
+  loading: true,
+});
+
+export const useSession = () => {
+  const context = useContext(SessionContext);
+  if (!context) {
+    throw new Error('useSession must be used within a SessionProvider');
+  }
+  return context;
+};
+
 function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider defaultTheme="light">
-        <QueryClientProvider client={queryClient}>
-          <SessionContextProvider supabaseClient={supabaseClient}>
+    <SessionContext.Provider value={{ session, loading }}>
+      <I18nextProvider i18n={i18n}>
+        <ThemeProvider defaultTheme="light">
+          <QueryClientProvider client={queryClient}>
             <TooltipProvider>
               <Router>
                 <Routes>
@@ -172,10 +209,10 @@ function App() {
                 <Toaster />
               </Router>
             </TooltipProvider>
-          </SessionContextProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </I18nextProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </I18nextProvider>
+    </SessionContext.Provider>
   );
 }
 
